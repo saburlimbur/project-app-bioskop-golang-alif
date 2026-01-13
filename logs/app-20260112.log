@@ -1,0 +1,9 @@
+2026-01-12T13:13:51.209+0700	INFO	usecase/user.go:78	attempting login	{"identifier": "bahlol@mail.com"}
+2026-01-12T13:13:51.325+0700	INFO	usecase/user.go:91	user found, checking password	{"user_id": 4, "username": "bahlol", "stored_password_length": 60, "input_password_length": 10}
+2026-01-12T13:13:51.397+0700	WARN	usecase/user.go:100	password mismatch	{"identifier": "bahlol@mail.com", "user_id": 4}
+2026-01-12T13:13:51.397+0700	WARN	adaptor/user_handler.go:77	login failed	{"identifier": "bahlol@mail.com", "error": "invalid credentials"}
+2026-01-12T13:39:22.718+0700	WARN	adaptor/user_handler.go:84	login failed	{"identifier": "bahlol@mail.com", "error": "invalid credentials"}
+2026-01-12T13:44:17.994+0700	WARN	adaptor/user_handler.go:84	login failed	{"identifier": "bahlol@mail.com", "error": "invalid credentials"}
+2026-01-12T13:44:24.572+0700	INFO	repository/user.go:64	Registered succesfully
+2026-01-12T22:38:51.487+0700	ERROR	adaptor/user_handler.go:50	failed to register user	{"error": "email already exists"}
+2026-01-12T22:38:59.254+0700	WARN	adaptor/user_handler.go:112	logout failed	{"error": "invalid session"}

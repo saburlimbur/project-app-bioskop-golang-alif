@@ -1,0 +1,7 @@
+2026-01-10T21:57:46.762+0700	ERROR	repository/user.go:59	Failed to register	{"error": "failed to encode args[4]: unable to encode 0 into text format for varchar (OID 1043): cannot find encode plan"}
+2026-01-10T21:57:46.766+0700	ERROR	usecase/user.go:58	register user failed	{"error": "failed to encode args[4]: unable to encode 0 into text format for varchar (OID 1043): cannot find encode plan"}
+2026-01-10T21:57:46.766+0700	ERROR	adaptor/user_handler.go:48	failed to register user	{"error": "failed to encode args[4]: unable to encode 0 into text format for varchar (OID 1043): cannot find encode plan"}
+2026-01-10T21:59:53.026+0700	INFO	repository/user.go:63	Registered succesfully
+2026-01-10T22:07:37.442+0700	ERROR	adaptor/user_handler.go:47	failed to register user	{"error": "email already registered"}
+2026-01-10T22:11:24.012+0700	ERROR	adaptor/user_handler.go:47	failed to register user	{"error": "email already registered"}
+2026-01-10T22:11:47.442+0700	INFO	repository/user.go:63	Registered succesfully
