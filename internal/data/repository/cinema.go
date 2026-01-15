@@ -3,9 +3,9 @@ package repository
 import (
 	"alfdwirhmn/bioskop/internal/data/entity"
 	"alfdwirhmn/bioskop/internal/dto"
+	"alfdwirhmn/bioskop/pkg/database"
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
@@ -16,11 +16,11 @@ type CinemaRepository interface {
 }
 
 type cinemaRepo struct {
-	db  *pgxpool.Pool
+	db  database.PgxIface
 	log *zap.Logger
 }
 
-func NewCinemaRepository(db *pgxpool.Pool, log *zap.Logger) CinemaRepository {
+func NewCinemaRepository(db database.PgxIface, log *zap.Logger) CinemaRepository {
 	return &cinemaRepo{
 		db:  db,
 		log: log,
