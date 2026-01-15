@@ -108,3 +108,27 @@ func (h *BookingAdapterHandler) GetBookingByID(
 		resp,
 	)
 }
+
+func (h *BookingAdapterHandler) GetUserBookingHistory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := ctx.Value(middleware.ContextUserID).(int)
+	if !ok {
+		utils.JSONError(w, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	bookings, err := h.Booking.GetUserBookingHistory(ctx, userID)
+	if err != nil {
+		h.Logger.Error("failed to get user bookings", zap.Error(err))
+		utils.JSONError(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	utils.JSONSuccess(
+		w,
+		http.StatusOK,
+		"successfully get booking history",
+		bookings,
+	)
+}
