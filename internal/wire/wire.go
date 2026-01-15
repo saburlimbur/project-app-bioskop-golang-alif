@@ -80,6 +80,11 @@ func SetupRouter(
 			r.Post("/logout", userHandler.Logout)
 		})
 
+		api.Route("/user", func(r chi.Router) {
+			r.With(appMiddleware.AuthMiddleware(repo)).
+				Get("/bookings", bookingHandler.GetUserBookingHistory)
+		})
+
 		api.Route("/cinemas", func(r chi.Router) {
 			r.With(appMiddleware.AuthMiddleware(repo)).Get("/", cinemaHandler.Lists)
 			r.With(appMiddleware.AuthMiddleware(repo)).Get("/{id}", cinemaHandler.DetailById)
