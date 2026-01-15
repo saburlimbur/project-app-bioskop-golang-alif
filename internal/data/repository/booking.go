@@ -2,10 +2,12 @@ package repository
 
 import (
 	"alfdwirhmn/bioskop/internal/data/entity"
+	"alfdwirhmn/bioskop/internal/dto"
 	"alfdwirhmn/bioskop/pkg/database"
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -14,6 +16,8 @@ type BookingRepository interface {
 	CreateBooking(ctx context.Context, bk *entity.Booking) (*entity.Booking, error)
 	FindBookingById(ctx context.Context, id int) (*entity.Booking, error)
 	UpdateBookingStatus(ctx context.Context, id int, status string) error
+	FindUserBookingHistory(ctx context.Context, userID int) ([]dto.UserBookingResponse, error)
+
 	IsSeatBooked(ctx context.Context, showtimeID int, seatID int) (bool, error)
 }
 
@@ -124,6 +128,90 @@ func (br *bookingRepo) UpdateBookingStatus(ctx context.Context, id int, status s
 	}
 
 	return nil
+}
+
+func (br *bookingRepo) FindUserBookingHistory(ctx context.Context, userID int) ([]dto.UserBookingResponse, error) {
+
+	query := `
+			SELECT
+			    b.id,
+			    b.booking_code,
+			    b.booking_status,
+			    b.total_price,
+			    b.expired_at,
+			    b.created_at,
+
+			    m.title,
+			    c.name,
+
+			    s.show_date,
+			    s.show_time,
+
+			    st.seat_number,
+			    st.row_number,
+			    st.seat_type,
+
+			    CASE
+			        WHEN p.id IS NULL THEN 'pending'
+			        ELSE p.payment_status
+			    END AS payment_status,
+
+			    COALESCE(p.amount, 0)
+			FROM bookings b
+			JOIN showtimes s ON s.id = b.showtime_id
+			JOIN cinemas c ON c.id = s.cinema_id
+			JOIN movies m ON m.id = s.movie_id
+			JOIN seats st ON st.id = b.seat_id
+			LEFT JOIN payments p ON p.booking_id = b.id
+			WHERE b.user_id = $1
+			ORDER BY b.created_at DESC;
+	`
+
+	rows, err := br.DB.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []dto.UserBookingResponse
+
+	for rows.Next() {
+		var r dto.UserBookingResponse
+		var showDate time.Time
+		var showTime time.Time
+
+		err := rows.Scan(
+			&r.ID,
+			&r.BookingCode,
+			&r.BookingStatus,
+			&r.TotalPrice,
+			&r.ExpiredAt,
+			&r.CreatedAt,
+
+			&r.MovieTitle,
+			&r.CinemaName,
+
+			&showDate,
+			&showTime,
+
+			&r.SeatNumber,
+			&r.SeatRow,
+			&r.SeatType,
+
+			&r.PaymentStatus,
+			&r.PaymentAmount,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		r.ShowDate = showDate.Format("2006-01-02")
+		r.ShowTime = showTime.Format("15:04")
+
+		result = append(result, r)
+	}
+
+	return result, nil
 }
 
 func (br *bookingRepo) IsSeatBooked(ctx context.Context, showtimeID int, seatID int) (bool, error) {

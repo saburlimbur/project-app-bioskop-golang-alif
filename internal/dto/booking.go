@@ -20,14 +20,20 @@ type BookingResponse struct {
 type UserBookingResponse struct {
 	ID            int       `json:"id"`
 	BookingCode   string    `json:"booking_code"`
-	TotalPrice    float64   `json:"total_price"`
 	BookingStatus string    `json:"booking_status"`
+	TotalPrice    float64   `json:"total_price"`
+	ExpiredAt     time.Time `json:"expired_at"`
 	CreatedAt     time.Time `json:"created_at"`
 
-	CinemaName string `json:"cinema_name"`
 	MovieTitle string `json:"movie_title"`
-	ShowDate   string `json:"show_date"`
-	ShowTime   string `json:"show_time"`
+	CinemaName string `json:"cinema_name"`
+
+	ShowDate string `json:"show_date"`
+	ShowTime string `json:"show_time"`
+
+	SeatNumber string `json:"seat_number"`
+	SeatRow    string `json:"seat_row"`
+	SeatType   string `json:"seat_type"`
 
 	PaymentStatus string  `json:"payment_status"`
 	PaymentAmount float64 `json:"payment_amount"`

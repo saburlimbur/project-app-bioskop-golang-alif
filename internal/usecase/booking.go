@@ -17,6 +17,7 @@ import (
 type BookingServiceCase interface {
 	CreateBooking(ctx context.Context, userID int, req dto.CreateBookingRequest) (*entity.Booking, error)
 	FindByID(ctx context.Context, id int) (*entity.Booking, error)
+	GetUserBookingHistory(ctx context.Context, userID int) ([]dto.UserBookingResponse, error)
 }
 
 type bookingServiceCase struct {
@@ -88,6 +89,11 @@ func (bs *bookingServiceCase) CreateBooking(ctx context.Context, userID int, req
 	}
 
 	return result, nil
+}
+
+func (bs *bookingServiceCase) GetUserBookingHistory(ctx context.Context, userID int) ([]dto.UserBookingResponse, error) {
+
+	return bs.Repo.BookingRepo.FindUserBookingHistory(ctx, userID)
 }
 
 func (bs *bookingServiceCase) FindByID(ctx context.Context, id int) (*entity.Booking, error) {
