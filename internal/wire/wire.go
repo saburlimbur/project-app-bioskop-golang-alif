@@ -4,12 +4,14 @@ import (
 	"alfdwirhmn/bioskop/internal/adaptor"
 	"alfdwirhmn/bioskop/internal/data/repository"
 	"alfdwirhmn/bioskop/internal/usecase"
+	"alfdwirhmn/bioskop/pkg/database"
 	appMiddleware "alfdwirhmn/bioskop/pkg/middleware"
 	"alfdwirhmn/bioskop/pkg/utils"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
@@ -32,7 +34,9 @@ func SetupRouter(
 
 	// container
 	repo := repository.NewRepository(db, logger)
-	service := usecase.NewService(repo, logger, config)
+	txMgr := database.NewTxManager(db)
+	validate := validator.New()
+	service := usecase.NewService(repo, txMgr, logger, config)
 
 	userHandler := adaptor.NewUserAdaptorHandler(
 		service.UserService,
@@ -43,6 +47,20 @@ func SetupRouter(
 	cinemaHandler := adaptor.NewCinemadaptorHandler(
 		service.CinemaService,
 		logger,
+		config,
+	)
+
+	bookingHandler := adaptor.NewBookingAdaptorHandler(
+		service.BookingService,
+		validate,
+		logger,
+		config,
+	)
+
+	paymentHandler := adaptor.NewPaymentdaptorHandler(
+		service.PaymentService,
+		logger,
+		validate,
 		config,
 	)
 
@@ -66,6 +84,23 @@ func SetupRouter(
 			r.With(appMiddleware.AuthMiddleware(repo)).Get("/", cinemaHandler.Lists)
 			r.With(appMiddleware.AuthMiddleware(repo)).Get("/{id}", cinemaHandler.DetailById)
 			r.With(appMiddleware.AuthMiddleware(repo)).Get("/{id}/seats", cinemaHandler.SeatAvailability)
+		})
+
+		api.Route("/booking", func(r chi.Router) {
+			r.With(appMiddleware.AuthMiddleware(repo)).
+				Post("/", bookingHandler.CreateBooking)
+			r.With(appMiddleware.AuthMiddleware(repo)).
+				Get("/{id}", bookingHandler.GetBookingByID)
+		})
+
+		api.Route("/payment", func(r chi.Router) {
+			r.With(appMiddleware.AuthMiddleware(repo)).
+				Post("/", paymentHandler.CreatePayment)
+		})
+
+		api.Route("/payment-methods", func(r chi.Router) {
+			r.With(appMiddleware.AuthMiddleware(repo)).
+				Get("/", paymentHandler.ListPaymentMethods)
 		})
 	})
 
