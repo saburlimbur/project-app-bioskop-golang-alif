@@ -13,6 +13,7 @@ import (
 type CinemasServiceCase interface {
 	FindAll(ctx context.Context, page, limit int) (*[]entity.Cinemas, *dto.Pagination, error)
 	FindById(ctx context.Context, id int) (*entity.Cinemas, error)
+
 	SeatAvailability(ctx context.Context, cinemaID int, date string, time string) (*dto.SeatAvailabilityResponse, error)
 }
 
