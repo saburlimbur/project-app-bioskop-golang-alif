@@ -2,9 +2,9 @@ package repository
 
 import (
 	"alfdwirhmn/bioskop/internal/data/entity"
+	"alfdwirhmn/bioskop/pkg/database"
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
@@ -17,11 +17,11 @@ type UserRepository interface {
 }
 
 type userRepo struct {
-	DB   *pgxpool.Pool
+	DB   database.PgxIface
 	Logg *zap.Logger
 }
 
-func NewUserRepository(db *pgxpool.Pool, log *zap.Logger) UserRepository {
+func NewUserRepository(db database.PgxIface, log *zap.Logger) UserRepository {
 	return &userRepo{
 		DB:   db,
 		Logg: log,

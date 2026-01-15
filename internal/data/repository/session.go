@@ -2,12 +2,12 @@ package repository
 
 import (
 	"alfdwirhmn/bioskop/internal/data/entity"
+	"alfdwirhmn/bioskop/pkg/database"
 	"context"
 	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
@@ -25,11 +25,11 @@ type Session struct {
 }
 
 type sessionRepository struct {
-	DB  *pgxpool.Pool
+	DB  database.PgxIface
 	Log *zap.Logger
 }
 
-func NewSessionRepository(db *pgxpool.Pool, log *zap.Logger) SessionRepository {
+func NewSessionRepository(db database.PgxIface, log *zap.Logger) SessionRepository {
 	return &sessionRepository{
 		DB:  db,
 		Log: log,
