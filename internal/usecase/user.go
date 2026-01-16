@@ -15,9 +15,10 @@ import (
 )
 
 type UserServiceCase interface {
-	Register(ctx context.Context, user *entity.Users, req dto.RegisterRequest) (*entity.Users, error)
+	Register(ctx context.Context, req dto.RegisterRequest) (*entity.Users, error)
 	Login(ctx context.Context, req dto.LoginRequest, ip, devinf string) (*dto.LoginResponse, error)
 	Logout(ctx context.Context, token string) error
+	VerifyEmail(ctx context.Context, req dto.VerifyEmailRequest) (*dto.UserResponse, error)
 }
 
 type userServiceCase struct {
@@ -34,7 +35,7 @@ func NewUserServiceCase(repo repository.Repository, log *zap.Logger, conf utils.
 	}
 }
 
-func (us *userServiceCase) Register(ctx context.Context, user *entity.Users, req dto.RegisterRequest) (*entity.Users, error) {
+func (us *userServiceCase) Register(ctx context.Context, req dto.RegisterRequest) (*entity.Users, error) {
 	exists, err := us.Repo.UserRepo.IsEmailExists(ctx, req.Email, 0)
 	if err != nil {
 		return nil, err
@@ -53,12 +54,14 @@ func (us *userServiceCase) Register(ctx context.Context, user *entity.Users, req
 	}
 
 	// hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(req.Password),
+		bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.New("failed to hash password")
 	}
 
-	user = &entity.Users{
+	user := &entity.Users{
 		Username:    req.Username,
 		Email:       req.Email,
 		Password:    string(hashedPassword),
@@ -66,7 +69,44 @@ func (us *userServiceCase) Register(ctx context.Context, user *entity.Users, req
 		PhoneNumber: req.PhoneNumber,
 	}
 
-	return us.Repo.UserRepo.Register(ctx, user)
+	// return us.Repo.UserRepo.Register(ctx, user)
+	tx, err := us.Repo.DB.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	repoTx := us.Repo.WithTx(tx)
+
+	newUser, err := repoTx.UserRepo.Register(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// generate otp
+	otpCode, err := utils.GenerateOTP()
+	if err != nil {
+		us.Logger.Error("failed to generate otp", zap.Error(err))
+		return nil, err
+	}
+
+	// save to db
+	otp := &entity.OTPVerification{
+		UserID:    newUser.ID,
+		OTPCode:   otpCode,
+		ExpiresAt: time.Now().Add(10 * time.Minute),
+	}
+	if err := repoTx.OTPRepo.CreateOTP(ctx, otp); err != nil {
+		return nil, err
+	}
+
+	// commit, so if it fails, the rollback runs and the user OTP is not stuck
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return newUser, nil
+
 }
 
 func (us *userServiceCase) Login(ctx context.Context, req dto.LoginRequest, ip, devinf string) (*dto.LoginResponse, error) {
@@ -79,7 +119,11 @@ func (us *userServiceCase) Login(ctx context.Context, req dto.LoginRequest, ip, 
 		return nil, errors.New("invalid credentials")
 	}
 
-	// generate token (string, bukan UUID struct)
+	if !user.IsVerified {
+		return nil, errors.New("email not verified")
+	}
+
+	// generate token
 	token := uuid.NewString()
 
 	expiresAt := time.Now().Add(24 * time.Hour)
@@ -120,4 +164,44 @@ func (us *userServiceCase) Logout(ctx context.Context, token string) error {
 	}
 
 	return nil
+}
+
+func (us *userServiceCase) VerifyEmail(ctx context.Context, req dto.VerifyEmailRequest) (*dto.UserResponse, error) {
+
+	user, err := us.Repo.UserRepo.FindByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	if user.EmailVerifiedAt != nil {
+		return nil, errors.New("email already verified")
+	}
+
+	tx, err := us.Repo.DB.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	repoTx := us.Repo.WithTx(tx)
+
+	// verify OTP
+	if _, err := repoTx.OTPRepo.VerifyOTP(ctx, user.ID, req.OTP); err != nil {
+		return nil, err
+	}
+
+	if err := repoTx.UserRepo.VerifyEmail(ctx, user.ID); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	verifiedUser, err := us.Repo.UserRepo.FindByIdentifier(ctx, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.ToUserResponse(verifiedUser), nil
 }
