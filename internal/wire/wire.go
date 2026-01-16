@@ -78,6 +78,7 @@ func SetupRouter(
 			r.Post("/register", userHandler.Register)
 			r.Post("/login", userHandler.Login)
 			r.Post("/logout", userHandler.Logout)
+			r.Post("/verify-email", userHandler.VerifyEmail)
 		})
 
 		api.Route("/user", func(r chi.Router) {
