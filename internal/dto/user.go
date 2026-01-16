@@ -6,11 +6,12 @@ import (
 )
 
 type UserResponse struct {
-	ID          int    `json:"id"`
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	FullName    string `json:"full_name"`
-	PhoneNumber string `json:"phone_number"`
+	ID            int    `json:"id"`
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	FullName      string `json:"full_name"`
+	PhoneNumber   string `json:"phone_number"`
+	EmailVerified bool   `json:"email_verified"`
 
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -29,18 +30,19 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	User      UserResponse `json:"user"`
-	Token     string       `json:"token"`
-	ExpiresAt time.Time    `json:"expires_at"`
+	User      *UserResponse `json:"user"`
+	Token     string        `json:"token"`
+	ExpiresAt time.Time     `json:"expires_at"`
 }
 
-func ToUserResponse(user *entity.Users) UserResponse {
-	return UserResponse{
-		ID:          user.ID,
-		Username:    user.Username,
-		Email:       user.Email,
-		FullName:    user.FullName,
-		PhoneNumber: user.PhoneNumber,
-		CreatedAt:   user.CreatedAt,
+func ToUserResponse(user *entity.Users) *UserResponse {
+	return &UserResponse{
+		ID:            user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		FullName:      user.FullName,
+		PhoneNumber:   user.PhoneNumber,
+		EmailVerified: user.EmailVerifiedAt != nil,
+		CreatedAt:     user.CreatedAt,
 	}
 }
