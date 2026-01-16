@@ -45,7 +45,7 @@ func (h *UserAdaptorHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	user, err := h.User.Register(ctx, nil, req)
+	user, err := h.User.Register(ctx, req)
 	if err != nil {
 		h.Logger.Error("failed to register user", zap.Error(err))
 		utils.JSONError(w, http.StatusBadRequest, err.Error(), nil)
@@ -55,7 +55,7 @@ func (h *UserAdaptorHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// mapping
 	resp := dto.ToUserResponse(user)
 
-	utils.JSONSuccess(w, http.StatusCreated, "Register successful", resp)
+	utils.JSONSuccess(w, http.StatusCreated, "Register successfully, Please verify your email", resp)
 }
 
 func (h *UserAdaptorHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +89,7 @@ func (h *UserAdaptorHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONSuccess(w, http.StatusOK, "Login successful", resp)
+	utils.JSONSuccess(w, http.StatusOK, "Login successfully", resp)
 }
 
 func (h *UserAdaptorHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -114,5 +114,27 @@ func (h *UserAdaptorHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONSuccess(w, http.StatusOK, "Logout successful", nil)
+	utils.JSONSuccess(w, http.StatusOK, "Logout successfully", nil)
+}
+
+func (h *UserAdaptorHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	var req dto.VerifyEmailRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
+
+	if validationErrors, err := utils.ValidateErrors(req); err != nil {
+		utils.JSONError(w, http.StatusBadRequest, "validation failed", validationErrors)
+		return
+	}
+
+	user, err := h.User.VerifyEmail(r.Context(), req)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, "Email verified successfully", user)
 }
