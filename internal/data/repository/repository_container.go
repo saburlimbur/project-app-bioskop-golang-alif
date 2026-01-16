@@ -16,6 +16,7 @@ type Repository struct {
 	ShowtimeRepo      ShowtimeRepository
 	PaymentRepo       PaymentRepository
 	PaymentMethodRepo PaymentMethodRepository
+	OTPRepo           OTPRepository
 
 	SessionRepo SessionRepository
 }
@@ -33,6 +34,7 @@ func NewRepository(db database.PgxIface, log *zap.Logger) Repository {
 		BookingRepo:       NewBookingRepository(db, log),
 		PaymentRepo:       NewPaymentRepository(db, log),
 		PaymentMethodRepo: NewPaymentMethodRepository(db, log),
+		OTPRepo:           NewOTPRepository(db, log),
 	}
 }
 
@@ -49,5 +51,6 @@ func (r Repository) WithTx(tx database.PgxIface) Repository {
 		BookingRepo:       NewBookingRepository(tx, r.Logg),
 		PaymentRepo:       NewPaymentRepository(tx, r.Logg),
 		PaymentMethodRepo: NewPaymentMethodRepository(tx, r.Logg),
+		OTPRepo:           NewOTPRepository(tx, r.Logg),
 	}
 }
